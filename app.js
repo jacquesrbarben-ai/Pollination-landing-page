@@ -1,4 +1,138 @@
 function initApp() {
+  // --- LANGUAGE CONTROLLER ---
+  let currentLang = 'en';
+  try {
+    currentLang = localStorage.getItem('pollination_lang') || 'en';
+  } catch (e) {
+    console.warn("localStorage is not available:", e);
+  }
+
+  const transDb = typeof window !== 'undefined' && window.translations ? window.translations : (typeof translations !== 'undefined' ? translations : null);
+
+  function t(key) {
+    if (!transDb) return key;
+    if (transDb[currentLang] && transDb[currentLang][key] !== undefined) {
+      return transDb[currentLang][key];
+    }
+    if (transDb['en'] && transDb['en'][key] !== undefined) {
+      return transDb['en'][key];
+    }
+    return key;
+  }
+
+  function applyTranslations() {
+    // 1. Static text nodes
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const translation = t(key);
+      if (translation) {
+        if (translation.includes('<') || translation.includes('&')) {
+          el.innerHTML = translation;
+        } else {
+          el.textContent = translation;
+        }
+      }
+    });
+
+    // 2. Input Placeholders
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      const translation = t(key);
+      if (translation) {
+        el.setAttribute('placeholder', translation);
+      }
+    });
+
+    // 3. Document Meta Tags & lang attribute
+    document.documentElement.setAttribute('lang', currentLang);
+    const pageTitle = t('title');
+    if (pageTitle) {
+      document.title = pageTitle;
+    }
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      const descVal = t('meta_desc');
+      if (descVal) {
+        metaDesc.setAttribute('content', descVal);
+      }
+    }
+  }
+
+  function switchLanguage(lang) {
+    currentLang = lang;
+    try {
+      localStorage.setItem('pollination_lang', lang);
+    } catch (e) {
+      console.warn("localStorage is not available for saving:", e);
+    }
+    
+    // Apply standard dictionary updates
+    applyTranslations();
+    
+    // Update active states on switcher dropdown items
+    document.querySelectorAll('.lang-dropdown-item').forEach(item => {
+      if (item.dataset.lang === lang) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+
+    // Update active label text on triggers
+    const desktopLabel = document.querySelector('#langDropdownTrigger .active-lang-label');
+    if (desktopLabel) {
+      desktopLabel.textContent = lang.toUpperCase();
+    }
+    const mobileLabel = document.querySelector('#langDropdownMobileTrigger .active-lang-label');
+    if (mobileLabel) {
+      mobileLabel.textContent = lang === 'af' ? 'Afrikaans' : 'English';
+    }
+
+    // Re-run dynamic calculators to update language-specific logic/strings
+    updateEstimator();
+    updateFlightSimulator();
+    calculateAuditScore();
+  }
+
+  // Handle language dropdown toggling
+  const desktopTrigger = document.getElementById('langDropdownTrigger');
+  const desktopDropdown = document.getElementById('langDropdown');
+  const mobileTrigger = document.getElementById('langDropdownMobileTrigger');
+  const mobileDropdown = document.getElementById('langDropdownMobile');
+
+  if (desktopTrigger && desktopDropdown) {
+    desktopTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      desktopDropdown.classList.toggle('active');
+      if (mobileDropdown) mobileDropdown.classList.remove('active');
+    });
+  }
+
+  if (mobileTrigger && mobileDropdown) {
+    mobileTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      mobileDropdown.classList.toggle('active');
+      if (desktopDropdown) desktopDropdown.classList.remove('active');
+    });
+  }
+
+  // Close dropdowns on outside click
+  document.addEventListener('click', () => {
+    if (desktopDropdown) desktopDropdown.classList.remove('active');
+    if (mobileDropdown) mobileDropdown.classList.remove('active');
+  });
+
+  // Bind click handlers to dropdown items
+  document.querySelectorAll('.lang-dropdown-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      const selectedLang = item.dataset.lang;
+      switchLanguage(selectedLang);
+      if (desktopDropdown) desktopDropdown.classList.remove('active');
+      if (mobileDropdown) mobileDropdown.classList.remove('active');
+    });
+  });
+
   // --- TABS CONTROLLER ---
   const tabButtons = document.querySelectorAll('.tab-btn');
   const tabPanels = document.querySelectorAll('.tab-panel');
@@ -30,11 +164,11 @@ function initApp() {
 
   // Hortgro guidelines: hives per hectare
   const cropRatios = {
-    apples_standard: { ratio: 2.5, desc: 'Hortgro recommendation: 2.5 hives per hectare for standard apple planting densities (~1667 trees/Ha). Introduce at 10% blossom.' },
-    apples_high: { ratio: 4.0, desc: 'Hortgro recommendation: 4.0 hives per hectare for high-density apple planting layouts (2000+ trees/Ha). Introduce at 10% blossom.' },
-    pears: { ratio: 5.0, desc: 'Hortgro recommendation: 5.0 hives per hectare. Pear blossoms have low nectar attractiveness; higher stocking rates are required.' },
-    plums: { ratio: 6.0, desc: 'Hortgro recommendation: 6.0 hives per hectare. Plums have brief flowering periods and high cross-pollination dependency.' },
-    apricots: { ratio: 2.0, desc: 'Hortgro recommendation: 2.0 hives per hectare. General stocking rate for self-fertile or fresh market apricot cultivars.' }
+    apples_standard: { ratio: 2.5, key: 'crop_ratio_apples_std' },
+    apples_high: { ratio: 4.0, key: 'crop_ratio_apples_high' },
+    pears: { ratio: 5.0, key: 'crop_ratio_pears' },
+    plums: { ratio: 6.0, key: 'crop_ratio_plums' },
+    apricots: { ratio: 2.0, key: 'crop_ratio_apricots' }
   };
 
   function updateEstimator() {
@@ -59,10 +193,11 @@ function initApp() {
     // Update DOM
     resultHives.textContent = totalHives;
     resultSites.textContent = suggestedSites;
-    resultCost.textContent = `R ${totalCost.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const locale = currentLang === 'af' ? 'af-ZA' : 'en-ZA';
+    resultCost.textContent = `R ${totalCost.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     resultBrood.textContent = minBrood;
     resultBees.textContent = minBees;
-    cropGuideline.textContent = ratioInfo.desc;
+    cropGuideline.textContent = t(ratioInfo.key);
 
     // Automatically sync info to contract input fields
     const contractHivesInput = document.getElementById('contractHives');
@@ -108,38 +243,38 @@ function initApp() {
     // 1. Temperature Impact (Bees prefer 15°C - 32°C)
     if (temp < 10) {
       activity = 0;
-      reasons.push('Too cold (below 10°C): bees cluster inside hive.');
+      reasons.push('reason_too_cold');
     } else if (temp < 15) {
       const penalty = (15 - temp) * 15;
       activity -= penalty;
-      reasons.push('Low temperature restricts muscle flight ability.');
+      reasons.push('reason_low_temp');
     } else if (temp > 33) {
       const penalty = (temp - 33) * 8;
       activity -= penalty;
-      reasons.push('Extreme heat: bees focus on cooling hive.');
+      reasons.push('reason_extreme_heat');
     }
 
     // 2. Wind Impact (Bees flight disrupted above 15km/h, stops above 30km/h)
     if (wind > 35) {
       activity = 0;
-      reasons.push('Gale wind (above 35km/h) prevents safe takeoff.');
+      reasons.push('reason_gale_wind');
     } else if (wind > 15) {
       const penalty = (wind - 15) * 4.5;
       activity -= penalty;
-      reasons.push('High winds reduce flight speed and foraging range.');
+      reasons.push('reason_high_wind');
     }
 
     // 3. Sky & Rain conditions
     let skyMultiplier = 1.0;
     if (sky === 'rain') {
       activity = 0;
-      reasons.push('Rain prevents foraging; washes away pollen/nectar.');
+      reasons.push('reason_rain');
     } else if (sky === 'overcast') {
       skyMultiplier = 0.6;
-      reasons.push('Overcast sky reduces solar navigation efficiency.');
+      reasons.push('reason_overcast');
     } else if (sky === 'cloudy') {
       skyMultiplier = 0.85;
-      reasons.push('Partial cloud cover slightly reduces bee activity.');
+      reasons.push('reason_cloudy');
     }
 
     activity = Math.max(0, Math.min(100, Math.round(activity * skyMultiplier)));
@@ -150,28 +285,28 @@ function initApp() {
     if (dialFill) {
       dialFill.style.strokeDashoffset = offset;
       
-      // Update color based on activity
+      // Update colour based on activity
       if (activity >= 75) {
         dialFill.style.stroke = 'var(--success)';
-        flightBadge.textContent = 'Excellent Flight Conditions';
+        flightBadge.textContent = t('flight_status_optimal');
         flightBadge.className = 'flight-status-badge flight-status-optimal';
       } else if (activity >= 40) {
         dialFill.style.stroke = 'var(--primary)';
-        flightBadge.textContent = 'Suboptimal Foraging';
+        flightBadge.textContent = t('flight_status_suboptimal');
         flightBadge.className = 'flight-status-badge flight-status-suboptimal';
       } else {
         dialFill.style.stroke = 'var(--danger)';
-        flightBadge.textContent = 'Critical / Low Flight';
+        flightBadge.textContent = t('flight_status_danger');
         flightBadge.className = 'flight-status-badge flight-status-danger';
       }
     }
 
     if (activity === 0) {
-      flightDesc.textContent = reasons.length > 0 ? reasons[0] : 'Weather conditions prevent flight.';
+      flightDesc.textContent = reasons.length > 0 ? t(reasons[0]) : t('flight_desc_none');
     } else {
       flightDesc.textContent = reasons.length > 0 
-        ? `Flight reduced: ${reasons.join(' ')}` 
-        : 'Perfect weather conditions for orchard pollination.';
+        ? `${t('flight_desc_prefix')}${reasons.map(r => t(r)).join(' ')}` 
+        : t('flight_desc_optimal');
     }
   }
 
@@ -196,23 +331,23 @@ function initApp() {
     scoreDial.textContent = `${percentage}%`;
     scoreProgressFill.style.width = `${percentage}%`;
 
-    // Grade and color adjustments
+    // Grade and colour adjustments
     if (percentage === 100) {
-      auditGrade.textContent = 'Orchard Fully Compliant';
+      auditGrade.textContent = t('audit_grade_full');
       auditGrade.style.color = 'var(--success)';
-      auditFeedback.textContent = 'Your orchard and arrangement contract meet all Hortgro best practices and WCBA standards. Excellent work!';
+      auditFeedback.textContent = t('audit_feedback_full');
     } else if (percentage >= 75) {
-      auditGrade.textContent = 'Good Compliance Level';
+      auditGrade.textContent = t('audit_grade_good');
       auditGrade.style.color = 'var(--primary-dark)';
-      auditFeedback.textContent = 'Almost there. Address the remaining checklist points to minimize risks and maximize fruit set.';
+      auditFeedback.textContent = t('audit_feedback_good');
     } else if (percentage >= 40) {
-      auditGrade.textContent = 'Action Advised (Moderate Risk)';
+      auditGrade.textContent = t('audit_grade_warn');
       auditGrade.style.color = 'var(--warning)';
-      auditFeedback.textContent = 'Missing critical pollination preparation items. Check spray notifications or hive grouping standards.';
+      auditFeedback.textContent = t('audit_feedback_warn');
     } else {
-      auditGrade.textContent = 'High Risk Status';
+      auditGrade.textContent = t('audit_grade_danger');
       auditGrade.style.color = 'var(--danger)';
-      auditFeedback.textContent = 'Significant non-compliance with Hortgro standards. High risk of poor pollination, bee deaths, or contract disputes.';
+      auditFeedback.textContent = t('audit_feedback_danger');
     }
   }
 
@@ -234,36 +369,38 @@ function initApp() {
   const contractCost = document.getElementById('contractCost');
   const btnPrint = document.getElementById('btnPrint');
 
-  // Preview elements
-  const prevGrower = document.getElementById('prev-grower');
-  const prevBeekeeper = document.getElementById('prev-beekeeper');
-  const prevFarm = document.getElementById('prev-farm');
-  const prevHives = document.getElementById('prev-hives');
-  const prevDate = document.getElementById('prev-date');
-  const prevCost = document.getElementById('prev-cost');
-  const prevDateSig = document.getElementById('prev-date-sig');
-
   function updateContract() {
-    prevGrower.textContent = contractGrower.value || '_______________________';
-    prevBeekeeper.textContent = contractBeekeeper.value || '_______________________';
-    prevFarm.textContent = contractFarm.value || '_______________________';
-    prevHives.textContent = contractHives.value || '___';
+    const prevGrower = document.getElementById('prev-grower');
+    const prevBeekeeper = document.getElementById('prev-beekeeper');
+    const prevFarm = document.getElementById('prev-farm');
+    const prevHives = document.getElementById('prev-hives');
+    const prevDate = document.getElementById('prev-date');
+    const prevCost = document.getElementById('prev-cost');
+    const prevDateSig = document.getElementById('prev-date-sig');
+
+    if (prevGrower) prevGrower.textContent = contractGrower.value || '_______________________';
+    if (prevBeekeeper) prevBeekeeper.textContent = contractBeekeeper.value || '_______________________';
+    if (prevFarm) prevFarm.textContent = contractFarm.value || '_______________________';
+    if (prevHives) prevHives.textContent = contractHives.value || '___';
     
+    const locale = currentLang === 'af' ? 'af-ZA' : 'en-ZA';
     // Format Date
     if (contractDate.value) {
       const dateObj = new Date(contractDate.value);
-      prevDate.textContent = dateObj.toLocaleDateString('en-ZA', { year: 'numeric', month: 'long', day: 'numeric' });
-      prevDateSig.textContent = dateObj.toLocaleDateString('en-ZA');
+      if (prevDate) prevDate.textContent = dateObj.toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' });
+      if (prevDateSig) prevDateSig.textContent = dateObj.toLocaleDateString(locale);
     } else {
-      prevDate.textContent = '_______________________';
-      prevDateSig.textContent = '__________';
+      if (prevDate) prevDate.textContent = '_______________________';
+      if (prevDateSig) prevDateSig.textContent = '__________';
     }
 
     // Format Cost
     const costVal = parseFloat(contractCost.value) || 0;
-    prevCost.textContent = costVal > 0 
-      ? `R ${costVal.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}` 
-      : 'R ____________';
+    if (prevCost) {
+      prevCost.textContent = costVal > 0 
+        ? `R ${costVal.toLocaleString(locale, { minimumFractionDigits: 2 })}` 
+        : 'R ____________';
+    }
   }
 
   // Bind inputs
@@ -526,7 +663,17 @@ function initApp() {
       e.preventDefault();
 
       const grower = document.getElementById('growerName').value;
-      const cropText = modalCropSelect.options[modalCropSelect.selectedIndex].text.split(' (')[0];
+      const cropVal = modalCropSelect.value;
+      const cropNameKeys = {
+        plums: 'crop_name_plums',
+        pears: 'crop_name_pears',
+        apples_standard: 'crop_name_apples_standard',
+        apples_high: 'crop_name_apples_high',
+        apricots: 'crop_name_apricots',
+        berries: 'crop_name_berries',
+        seed_crops: 'crop_name_seed_crops'
+      };
+      const cropText = t(cropNameKeys[cropVal]) || modalCropSelect.options[modalCropSelect.selectedIndex].text.split(' (')[0];
       const location = document.getElementById('farmLocation').value;
       const hectares = parseFloat(modalHectaresInput.value);
       const density = parseFloat(modalHivesPerHa.value);
@@ -546,10 +693,11 @@ function initApp() {
       if (summaryCrop) summaryCrop.textContent = cropText;
       if (summaryLocation) summaryLocation.textContent = location;
       if (summarySize) summarySize.textContent = hectares.toFixed(1);
-      if (summaryDensity) summaryDensity.textContent = `${density.toFixed(1)} Hives/Ha`;
+      const densityUnit = currentLang === 'af' ? 'Korwe/Ha' : 'Hives/Ha';
+      if (summaryDensity) summaryDensity.textContent = `${density.toFixed(1)} ${densityUnit}`;
       if (summaryTotalHives) summaryTotalHives.textContent = totalHives;
       if (summaryPrice) {
-        summaryPrice.textContent = price.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        summaryPrice.textContent = price.toLocaleString(currentLang === 'af' ? 'af-ZA' : 'en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       }
 
       // Show success screen and hide fields
@@ -559,9 +707,7 @@ function initApp() {
   }
 
   // --- INITIALIZE ALL ---
-  updateEstimator();
-  updateFlightSimulator();
-  calculateAuditScore();
+  switchLanguage(currentLang);
 }
 
 if (document.readyState === 'loading') {

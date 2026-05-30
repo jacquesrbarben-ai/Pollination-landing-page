@@ -1,6 +1,6 @@
 # 🐝 Pollination Manager — Hortgro Standards & Guidelines Hub
 
-A modern, interactive, and responsive B2B web application designed to help South African deciduous fruit growers optimize crop yields by adhering to **Hortgro Science Pollination Standards & guidelines** and the **Western Cape Bee Association (WCBA)** charter. 
+A modern, interactive, and responsive B2B web application designed to help South African deciduous fruit growers optimise crop yields by adhering to **Hortgro Science Pollination Standards & guidelines** and the **Western Cape Bee Association (WCBA)** charter. 
 
 🌐 **Live Deployment:** [https://pollination-landing-page.vercel.app](https://pollination-landing-page.vercel.app)
 
@@ -21,7 +21,7 @@ A modern, interactive, and responsive B2B web application designed to help South
 ## ✨ Features
 
 - **Pillars of Pollination:** In-depth compliance guides detailing hive strength quality audits, spatial arrangement recommendations, and chemical spray safety contracts.
-- **Crop Specializations:** Specific recommendations and stocking densities for Apples (Standard & High Density), Pears & Stone Fruits, Specialized Seed Crops, and Berries.
+- **Crop Specialisations:** Specific recommendations and stocking densities for Apples (Standard & High Density), Pears & Stone Fruits, Specialised Seed Crops, and Berries.
 - **Strategic Bio-Deployment Timeline:** Step-by-step guidance on Orchard Site Auditing, Bio-Asset Prep, Night-time Placement, and Post-Bloom Retrieval.
 - **Regional Pollination Calendar:** Interactive calendar detailing crop bloom windows across key Western Cape deciduous fruit regions (Elgin/Grabouw, Ceres, Stellenbosch/Paarl, etc.) with category filtering.
 - **Grower Booking/Inquiry Form:** Seamless lead-generation form enabling growers to inquire about beekeeping services for specific crop requirements.
@@ -115,5 +115,5 @@ To deploy changes to the live site:
 
 For reference, the app integrates the following core charter requirements:
 * **Hive Strength:** Hives must have at least 8 frames covered in bees and 4 frames of active brood.
-* **Hive Placements:** Must be placed in circular groupings of 4–10 hives, spaced no further than 400 meters apart.
+* **Hive Placements:** Must be placed in circular groupings of 4–10 hives, spaced no further than 400 metres apart.
 * **Chemical Guidelines:** Strictly zero insecticide application during bloom. Rest-breakers must be completed 2 weeks prior. Notification to beekeepers must be given at least 48 hours before spraying within a 3km radius.
