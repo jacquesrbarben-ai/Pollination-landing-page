@@ -161,6 +161,7 @@ const translations = {
     res_frames_unit: "frames",
     btn_request_booking: "Request Beekeeper Booking",
     calc_grouping_note: "Hives should be grouped in batches of 4-10 in a circle to limit bees drifting and fighting, with no site further than 400m apart.",
+    calc_disclaimer: "<strong>Disclaimer:</strong> These calculations are based on Hortgro guidelines to provide an estimation of your needs. We are not here to provide official agricultural guidance. You will need to consult your local agricultural extension officer for specific requirements.",
 
     // Tab 2: Simulator
     sim_title: "Bee Foraging Flight Simulator",
@@ -357,6 +358,7 @@ const translations = {
     summary_density: "Hives / Hectare:",
     summary_total_hives: "Total Hives Needed:",
     summary_price: "Target Price:",
+    lbl_per_hive: "per hive",
     
     btn_return_hub: "Return to Hub",
     
@@ -420,6 +422,7 @@ const translations = {
     lbl_hectares_unit: "Hectares",
     lbl_note: "Note:",
     calc_grouping_note: "Hives should be grouped in batches of 4-10 in a circle to limit bees drifting and fighting, with no site further than 400m apart.",
+    calc_disclaimer: "<strong>Disclaimer:</strong> These calculations are based on Hortgro guidelines to provide an estimation of your needs. We are not here to provide official agricultural guidance. You will need to consult your local agricultural extension officer for specific requirements.",
     lbl_farm_size: "Farm Size (Hectares) *"
   },
   af: {
@@ -584,6 +587,7 @@ const translations = {
     res_frames_unit: "rame",
     btn_request_booking: "Versoek Byeboer-bespreking",
     calc_grouping_note: "Korwe moet in groepe van 4-10 in 'n sirkel geplaas word om drywing en bakleiery te verminder, met geen perseel verder as 400m uitmekaar nie.",
+    calc_disclaimer: "<strong>Vrywaring:</strong> Hierdie berekeninge is gebaseer op Hortgro-riglyne om 'n skatting van jou behoeftes te verskaf. Ons is nie hier om amptelike landbou-voorligting te gee nie. Jy sal jou plaaslike landbou-voorligtingsbeampte moet raadpleeg vir spesifieke vereistes.",
 
     // Tab 2: Simulator
     sim_title: "By-dragvlugsimuleerder",
@@ -780,6 +784,7 @@ const translations = {
     summary_density: "Korwe / Hektaar:",
     summary_total_hives: "Totale Korwe Benodig:",
     summary_price: "Teikentarief:",
+    lbl_per_hive: "per korf",
     
     btn_return_hub: "Keer terug na Spilpunt",
     
@@ -843,6 +848,11 @@ const translations = {
     lbl_hectares_unit: "Hektare",
     lbl_note: "Nota:",
     calc_grouping_note: "Korwe moet in groepe van 4-10 in 'n sirkel geplaas word om drywing en bakleiery te verminder, met geen perseel verder as 400m uitmekaar nie.",
+    calc_disclaimer: "<strong>Vrywaring:</strong> Hierdie berekeninge is gebaseer op Hortgro-riglyne om 'n skatting van jou behoeftes te verskaf. Ons is nie hier om amptelike landbou-voorligting te gee nie. Jy sal jou plaaslike landbou-voorligtingsbeampte moet raadpleeg vir spesifieke vereistes.",
     lbl_farm_size: "Plaasgrootte (Hektare) *"
   }
 };
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = translations;
+}
